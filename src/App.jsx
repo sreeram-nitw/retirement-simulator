@@ -184,13 +184,18 @@ export default function App() {
           </div>
         </div>
         <div className="topbar-actions">
-          <Button variant="ghost" onClick={() => applyPreset(defaultScenario)}>Detailed</Button>
-          <Button variant="ghost" onClick={() => applyPreset(simpleScenario)}>Simple</Button>
-          <Button variant="default" onClick={doShare}>{copied ? '✓ Link copied' : 'Share link'}</Button>
-          <Button variant="default" onClick={exportCsv}>Export CSV</Button>
-          <Button variant="default" onClick={exportAll}>Export data</Button>
-          <Button variant="default" onClick={() => fileInputRef.current?.click()}>Import data</Button>
-          <Button variant="primary" onClick={saveCurrent}>Save scenario</Button>
+          <Button variant="primary" onClick={doShare}>{copied ? '✓ Link copied' : 'Share link'}</Button>
+          <Button variant="default" onClick={saveCurrent}>Save</Button>
+          <Menu label="More">
+            <div className="menu-label">Examples</div>
+            <MenuItem onClick={() => applyPreset(defaultScenario)}>Detailed example</MenuItem>
+            <MenuItem onClick={() => applyPreset(simpleScenario)}>Simple example</MenuItem>
+            <div className="menu-sep" />
+            <div className="menu-label">Data</div>
+            <MenuItem onClick={exportCsv}>Export projection (CSV)</MenuItem>
+            <MenuItem onClick={exportAll}>Export backup (JSON)</MenuItem>
+            <MenuItem onClick={() => fileInputRef.current?.click()}>Import backup (JSON)</MenuItem>
+          </Menu>
           <input
             ref={fileInputRef}
             type="file"
@@ -392,6 +397,31 @@ export default function App() {
       </footer>
     </div>
   );
+}
+
+/* dropdown menu for secondary topbar actions */
+function Menu({ label, children }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  useEffect(() => {
+    if (!open) return;
+    const onDoc = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener('mousedown', onDoc);
+    return () => document.removeEventListener('mousedown', onDoc);
+  }, [open]);
+  return (
+    <div className="menu" ref={ref}>
+      <Button variant="default" onClick={() => setOpen((o) => !o)}>{label} ▾</Button>
+      {open && (
+        <div className="menu-pop" role="menu" onClick={() => setOpen(false)}>
+          {children}
+        </div>
+      )}
+    </div>
+  );
+}
+function MenuItem({ onClick, children }) {
+  return <button className="menu-item" role="menuitem" onClick={onClick}>{children}</button>;
 }
 
 /* small inline numeric box */
