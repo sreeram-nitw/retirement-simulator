@@ -32,9 +32,9 @@ is no backend, no account, and no tracking.
 - **Live charts** — corpus over time, and spending-vs-income over time.
 - **Solver** — finds your *earliest safe retirement age* and *maximum safe
   spending*.
-- **Scenarios** — save setups, overlay them to compare, share via URL, export
-  the full year-by-year projection to CSV, and back up / restore everything as a
-  JSON file.
+- **Scenarios** — save setups, overlay them to compare, **share via a short
+  link** (`/s/:id`), export the full year-by-year projection to CSV, and back up
+  / restore everything as a JSON file.
 
 Two presets are built in:
 - **Detailed** — full line items + tax drag ON.
@@ -73,7 +73,27 @@ vercel          # from this folder; accept the detected Vite settings
 vercel --prod   # promote to production
 ```
 
-No environment variables or backend are required.
+No environment variables are required for the core app.
+
+---
+
+## Short links (optional)
+
+The **Share link** button works with zero setup: it falls back to a long,
+self-contained URL that carries the whole scenario in its hash. To get short
+`/s/:id` links instead, connect a Redis store — the scenario is saved there and
+the link just references its id.
+
+1. In the Vercel dashboard → **Storage → Create Database → Upstash for Redis**
+   (free tier is plenty) and **connect it to this project**.
+2. Vercel injects the credentials as environment variables. The serverless
+   functions read either naming scheme:
+   - `KV_REST_API_URL` + `KV_REST_API_TOKEN`, or
+   - `UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`
+3. Redeploy. The **Share link** button now returns `/s/:id` links.
+
+Shared scenarios are stored for one year. Until a store is connected, sharing
+still works via the long hash link. The two functions live in [`api/`](api/).
 
 ---
 
@@ -107,7 +127,7 @@ src/
     engine.js      core simulation + solvers (framework-free, unit-verifiable)
     defaults.js    sample scenario + portfolio (illustrative figures)
     format.js      ₹ Lakh/Crore formatting
-    share.js       URL share-links, CSV export, JSON backup/restore
+    share.js       URL/short links, CSV export, JSON backup/restore
   components/
     ui.jsx         inputs, sliders, toggles, stat blocks
     ExpenseTable.jsx
@@ -117,6 +137,9 @@ src/
   App.jsx          orchestrates state, layout and actions
   main.jsx         React entry point
   styles.css
+api/
+  save.js          POST a scenario, get a short id (Redis-backed)
+  get.js           GET a scenario by short id
 ```
 
 Stack: **React 18**, **Vite 5**, **Recharts**. No backend.

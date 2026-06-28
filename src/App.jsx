@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { simulate, blend, earliestSafeRetirementAge, maxSafeExpenseFactor, liquidAssetTotal } from './lib/engine.js';
 import { defaultScenario, simpleScenario } from './lib/defaults.js';
 import { inr, inrFull, pct } from './lib/format.js';
-import { shareUrl, scenarioFromHash, rowsToCsv, downloadFile, exportData, parseImport } from './lib/share.js';
+import { shareUrl, scenarioFromHash, rowsToCsv, downloadFile, exportData, parseImport, encodeScenario, createShortLink, shortIdFromPath, fetchScenarioById } from './lib/share.js';
 import { Section, Stat, Field, RupeeInput, PercentInput, Slider, Toggle, Button } from './components/ui.jsx';
 import ExpenseTable from './components/ExpenseTable.jsx';
 import InflowTable from './components/InflowTable.jsx';
@@ -93,6 +93,17 @@ export default function App() {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); } catch {}
   }, [saved]);
 
+  // If opened via a short link (/s/:id), load that shared scenario from the backend.
+  useEffect(() => {
+    const id = shortIdFromPath();
+    if (!id) return;
+    let cancelled = false;
+    fetchScenarioById(id).then((sc) => {
+      if (!cancelled && sc) { setScenario(sc); setSolver(null); }
+    });
+    return () => { cancelled = true; };
+  }, []);
+
   const firstRet = result.rows.find((r) => r.phase === 'Retired');
   const peakRow = result.rows.find((r) => r.age === result.peakSpendAge);
   const lastSpendAge = scenario.endAge - 1;
@@ -117,9 +128,12 @@ export default function App() {
   const toggleCompare = (name) =>
     setCompareOn((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
   const doShare = async () => {
-    const url = shareUrl(scenario);
+    // Prefer a short backend link; fall back to a long self-contained hash link.
+    let url;
+    try { url = await createShortLink(scenario); }
+    catch { url = shareUrl(scenario); }
     try { await navigator.clipboard.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); }
-    catch { window.location.hash = `s=${url.split('#s=')[1]}`; }
+    catch { window.location.hash = `s=${encodeScenario(scenario)}`; }
   };
   const exportCsv = () => downloadFile('retirement-projection.csv', rowsToCsv(result.rows));
   const exportAll = () => {
@@ -372,7 +386,8 @@ export default function App() {
       <footer className="foot">
         <p className="muted small">
           Projections are deterministic estimates based on your inputs — not financial advice.
-          All sample figures are illustrative. Your numbers stay in your browser; nothing is sent to a server.
+          All sample figures are illustrative. Your numbers stay in your browser, except when you
+          create a share link — that scenario is saved so the recipient can open it.
         </p>
       </footer>
     </div>

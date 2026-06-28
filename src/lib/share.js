@@ -30,10 +30,47 @@ export function scenarioFromHash() {
   return match ? decodeScenario(match[1]) : null;
 }
 
-/** Build a full shareable URL for a scenario. */
+/** Build a full shareable URL for a scenario (long, self-contained hash link). */
 export function shareUrl(scenario) {
   const base = window.location.origin + window.location.pathname;
   return `${base}#s=${encodeScenario(scenario)}`;
+}
+
+/* ------------------------------ Short links (/s/:id) ------------------------------ */
+
+/**
+ * Save the scenario to the backend and return a short share URL (origin/s/:id).
+ * Throws if the backend isn't available (caller falls back to a long hash link).
+ */
+export async function createShortLink(scenario) {
+  const res = await fetch('/api/save', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ scenario }),
+  });
+  if (!res.ok) throw new Error(`save failed: ${res.status}`);
+  const { id } = await res.json();
+  if (!id) throw new Error('no id returned');
+  return `${window.location.origin}/s/${id}`;
+}
+
+/** Read a short-link id from the current path (/s/:id). */
+export function shortIdFromPath() {
+  if (typeof window === 'undefined') return null;
+  const m = window.location.pathname.match(/^\/s\/([A-Za-z0-9]{4,16})$/);
+  return m ? m[1] : null;
+}
+
+/** Fetch a scenario by short id. Returns the scenario, or null on any failure. */
+export async function fetchScenarioById(id) {
+  try {
+    const res = await fetch(`/api/get?id=${encodeURIComponent(id)}`);
+    if (!res.ok) return null;
+    const { scenario } = await res.json();
+    return scenario && Array.isArray(scenario.expenses) ? scenario : null;
+  } catch {
+    return null;
+  }
 }
 
 /* --------------------------- Full backup (export / import) --------------------------- */
