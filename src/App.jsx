@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { simulate, blend, earliestSafeRetirementAge, maxSafeExpenseFactor, liquidAssetTotal } from './lib/engine.js';
+import { simulate, blend, earliestSafeRetirementAge, maxSafeExpenseFactor, liquidAssetTotal, spendBreakdown } from './lib/engine.js';
 import { defaultScenario, simpleScenario } from './lib/defaults.js';
 import { inr, inrFull, pct } from './lib/format.js';
 import { shareUrl, scenarioFromHash, rowsToCsv, downloadFile, exportData, parseImport, encodeScenario, createShortLink, shortIdFromPath, fetchScenarioById } from './lib/share.js';
 import { Section, Stat, Field, RupeeInput, PercentInput, Slider, Toggle, Button, NumField, PctField } from './components/ui.jsx';
 import ExpenseTable from './components/ExpenseTable.jsx';
+import SpendBreakdown from './components/SpendBreakdown.jsx';
 import InflowTable from './components/InflowTable.jsx';
 import AssetTable from './components/AssetTable.jsx';
 import { CorpusChart, ExpenseChart } from './components/Charts.jsx';
@@ -113,6 +114,8 @@ export default function App() {
   // Portfolio: when liquid assets exist they drive the corpus (currentSavings becomes derived).
   const liquidSum = liquidAssetTotal(scenario);
   const usingPortfolio = liquidSum != null;
+
+  const breakdown = useMemo(() => spendBreakdown(scenario), [scenario]);
 
   // Solver display: anchor the % to concrete rupee figures, shown in today's ₹.
   // The first retirement year inflates every line by the same factor, so we
@@ -318,6 +321,12 @@ export default function App() {
                   : `+${headroomPct}% more than you plan to`)
               : ''} />
         </div>
+      </Section>
+
+      {/* ---------------- Where your money goes ---------------- */}
+      <Section title="Where your money goes"
+        subtitle="Year-1 retirement spend ranked by size, in today's ₹. The biggest bars are where cutting has the most impact.">
+        <SpendBreakdown breakdown={breakdown} />
       </Section>
 
       {/* ---------------- Expense engine ---------------- */}

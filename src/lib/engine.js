@@ -73,6 +73,39 @@ function lineActive(line, age, planEndAge) {
 }
 
 /**
+ * Breakdown of the first retirement year's recurring spend, in TODAY's rupees
+ * (the entered amounts are today's ₹, so no inflation is applied). One-offs are
+ * excluded since they're lump sums, not a monthly run-rate. Returns the lines
+ * and bucket subtotals sorted largest-first plus the grand total — the basis for
+ * the "where your money goes / what to cut" view. Matches the Solver's
+ * "you plan to spend" figure.
+ */
+export function spendBreakdown(s) {
+  const currentAge = Number(s.currentAge);
+  const retirementAge = Number(s.retirementAge);
+  const endAge = Number(s.endAge);
+  const age = retirementAge; // first retirement year
+
+  const items = [];
+  for (const e of s.expenses || []) {
+    if (e.cadence === 'oneoff') continue;
+    if (lineActive(e, age, endAge)) {
+      items.push({ id: e.id, name: e.name, bucket: e.bucket, annual: annualBase(e.amount, e.cadence) });
+    }
+  }
+  const total = items.reduce((sum, i) => sum + i.annual, 0);
+
+  const bucketMap = {};
+  for (const i of items) bucketMap[i.bucket] = (bucketMap[i.bucket] || 0) + i.annual;
+  const buckets = Object.entries(bucketMap)
+    .map(([bucket, annual]) => ({ bucket, annual }))
+    .sort((a, b) => b.annual - a.annual);
+
+  items.sort((a, b) => b.annual - a.annual);
+  return { items, buckets, total };
+}
+
+/**
  * Run the full simulation.
  * @param {Object} s scenario
  * @returns {{rows: Array, survives: boolean, depletionAge: number|null,
