@@ -1,5 +1,5 @@
 import React from 'react';
-import { inr, pct } from '../lib/format.js';
+import { inr, pct, groupNumber } from '../lib/format.js';
 
 /** Card section with a header. */
 export function Section({ title, subtitle, right, children }) {
@@ -41,28 +41,60 @@ export function Field({ label, hint, children }) {
   );
 }
 
+/** Character index just after the Nth digit in a string (for caret restore). */
+function caretAfterDigit(str, n) {
+  if (n <= 0) return 0;
+  let count = 0;
+  for (let i = 0; i < str.length; i++) {
+    const c = str.charCodeAt(i);
+    if (c >= 48 && c <= 57) {
+      if (++count === n) return i + 1;
+    }
+  }
+  return str.length;
+}
+
 /**
- * Numeric input that lets the field go empty while editing instead of snapping
- * back to 0 (which used to leave a stuck leading zero). Keeps a local text draft
- * while focused; emits a number (or `emptyValue` when blank) to the model.
+ * Integer input with live thousands separators. A number input can't show
+ * commas, so this is a text input that groups the value as you type
+ * (e.g. 2,50,000) following the active notation. The caret is tracked by digit
+ * position and restored after each reformat so inserted commas don't jump it.
+ * Keeps a draft so the field can go empty without snapping back to a stuck 0;
+ * emits a number (or `emptyValue` when blank) to the model.
  */
-export function NumField({ value, onChange, className = 'input', step, min, max, placeholder, disabled, emptyValue = 0 }) {
-  const [draft, setDraft] = React.useState(null);
-  const shown = draft != null ? draft : (value ?? '');
+export function NumField({ value, onChange, className = 'input', placeholder, disabled, emptyValue = 0 }) {
+  const ref = React.useRef(null);
+  const caretDigits = React.useRef(null); // # of digits before the caret, set on change
+  const [draft, setDraft] = React.useState(null); // digit string while focused; null at rest
+  const editing = draft != null;
+  const shown = editing
+    ? (draft === '' ? '' : groupNumber(draft))
+    : value === '' || value == null ? '' : groupNumber(value);
+
+  React.useLayoutEffect(() => {
+    if (caretDigits.current == null || !ref.current) return;
+    const pos = caretAfterDigit(shown, caretDigits.current);
+    ref.current.setSelectionRange(pos, pos);
+    caretDigits.current = null;
+  });
+
   return (
     <input
-      type="number"
+      ref={ref}
+      type="text"
+      inputMode="numeric"
       className={className}
       value={shown}
-      step={step}
-      min={min}
-      max={max}
       placeholder={placeholder}
       disabled={disabled}
+      onFocus={() => setDraft(value === '' || value == null ? '' : String(value))}
       onChange={(e) => {
-        const v = e.target.value;
-        setDraft(v);
-        onChange(v === '' ? emptyValue : Number(v));
+        const el = e.target;
+        const caret = el.selectionStart ?? el.value.length;
+        caretDigits.current = el.value.slice(0, caret).replace(/\D/g, '').length;
+        const cleaned = el.value.replace(/\D/g, '');
+        setDraft(cleaned);
+        onChange(cleaned === '' ? emptyValue : Number(cleaned));
       }}
       onBlur={() => setDraft(null)}
     />

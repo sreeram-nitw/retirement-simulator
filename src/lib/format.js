@@ -55,6 +55,12 @@ export function currencySymbol() {
   return CONFIG.currency;
 }
 
+/** Plain grouped number (no currency) for editable inputs, e.g. 1,50,000 / 150,000. */
+export function groupNumber(n) {
+  if (n === '' || n == null || isNaN(n)) return '';
+  return group(Number(n), 2);
+}
+
 const sys = () => SYSTEMS[CONFIG.system] || SYSTEMS.indian;
 
 /** Group a number with the active system's locale and up to `maxFrac` decimals. */
