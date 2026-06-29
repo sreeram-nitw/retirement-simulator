@@ -135,8 +135,8 @@ export const EXPENSE_BUCKETS = [
   'All',
 ];
 
-export const newExpense = () =>
-  m('Other', 'New expense', 10000, 'monthly', 60, 'life');
+export const newExpense = (startAge = 30) =>
+  m('Other', 'New expense', 10000, 'monthly', startAge, 'life');
 
 export const newInflow = () => ({
   id: uid('i'),

@@ -13,7 +13,7 @@ export default function ExpenseTable({ expenses, currentAge, planEndAge, onChang
   const update = (id, patch) =>
     onChange(expenses.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   const remove = (id) => onChange(expenses.filter((e) => e.id !== id));
-  const add = () => onChange([...expenses, newExpense()]);
+  const add = () => onChange([...expenses, newExpense(currentAge)]);
 
   // Separate the steady run-rate from one-offs so the total isn't muddied by
   // a future lump sum being treated as a yearly cost.
