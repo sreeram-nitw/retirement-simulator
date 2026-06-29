@@ -13,6 +13,12 @@ import { CorpusChart, ExpenseChart } from './components/Charts.jsx';
 const SAVE_KEY = 'retsim:saved:v1';
 const FORMAT_KEY = 'retsim:format:v1';
 
+/** The user's last-chosen currency (for the fresh default on load). */
+const initialCurrency = () => {
+  try { return JSON.parse(localStorage.getItem(FORMAT_KEY))?.currency || '₹'; }
+  catch { return '₹'; }
+};
+
 /* ----------------------------- Allocation editor ----------------------------- */
 function AllocationTable({ rows, onChange }) {
   const update = (i, patch) => onChange(rows.map((r, j) => (j === i ? { ...r, ...patch } : r)));
@@ -62,7 +68,7 @@ function PctCell({ value, onChange }) {
 
 /* --------------------------------- App --------------------------------- */
 export default function App() {
-  const [scenario, setScenario] = useState(() => scenarioFromHash() || defaultScenario());
+  const [scenario, setScenario] = useState(() => scenarioFromHash() || defaultScenario(initialCurrency()));
   const [saved, setSaved] = useState(() => {
     try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || []; } catch { return []; }
   });
@@ -74,15 +80,21 @@ export default function App() {
     try { return { ...{ system: 'indian', currency: '₹' }, ...JSON.parse(localStorage.getItem(FORMAT_KEY)) }; }
     catch { return { system: 'indian', currency: '₹' }; }
   });
+  // True while the current scenario is an untouched example (safe to replace on
+  // a currency switch without warning). Edits/loads flip it to false.
+  const [isExample, setIsExample] = useState(() => !scenarioFromHash());
   const fileInputRef = useRef(null);
 
-  // Apply the display preference before children render, and persist it.
-  setFormatConfig(format);
+  // Currency is a property of the scenario; notation is a viewer preference.
+  const currency = scenario.currency || format.currency || '₹';
+
+  // Apply the display config before children render, and persist the preference.
+  setFormatConfig({ system: format.system, currency });
   useEffect(() => {
     try { localStorage.setItem(FORMAT_KEY, JSON.stringify(format)); } catch {}
   }, [format]);
 
-  const set = (field, value) => setScenario((s) => ({ ...s, [field]: value }));
+  const set = (field, value) => { setScenario((s) => ({ ...s, [field]: value })); setIsExample(false); };
 
   const result = useMemo(() => simulate(scenario), [scenario]);
 
@@ -113,7 +125,7 @@ export default function App() {
     if (!id) return;
     let cancelled = false;
     fetchScenarioById(id).then((sc) => {
-      if (!cancelled && sc) { setScenario(sc); }
+      if (!cancelled && sc) { setScenario(sc); setIsExample(false); }
     });
     return () => { cancelled = true; };
   }, []);
@@ -139,7 +151,17 @@ export default function App() {
   const overspending = solver.maxSpend.factor < 1;
 
   /* actions */
-  const applyPreset = (fn) => { setScenario(fn()); };
+  const applyPreset = (fn) => { setScenario(fn(currency)); setIsExample(true); };
+  const switchCurrency = (next) => {
+    if (next === currency) return;
+    if (!isExample &&
+      !window.confirm(`Switch to ${next}? This loads fresh ${next} example amounts and replaces your current plan. Unsaved changes will be lost.`)) {
+      return;
+    }
+    setScenario(defaultScenario(next));
+    setIsExample(true);
+    setFormat((f) => ({ ...f, currency: next }));
+  };
   const saveCurrent = () => {
     const name = prompt('Name this scenario:', scenario.name || 'My scenario');
     if (!name) return;
@@ -150,7 +172,7 @@ export default function App() {
     setSaved((prev) => prev.filter((p) => p.name !== name));
     setCompareOn((prev) => prev.filter((n) => n !== name));
   };
-  const loadSaved = (s) => { setScenario(s.scenario); };
+  const loadSaved = (s) => { setScenario(s.scenario); setIsExample(false); };
   const toggleCompare = (name) =>
     setCompareOn((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
   const doShare = async () => {
@@ -180,7 +202,7 @@ export default function App() {
             return [...prev.filter((p) => !names.has(p.name)), ...incoming];
           });
         }
-        if (current) { setScenario(current); }
+        if (current) { setScenario(current); setIsExample(false); }
         const parts = [];
         if (current) parts.push('current scenario');
         if (incoming.length) parts.push(`${incoming.length} saved scenario${incoming.length > 1 ? 's' : ''}`);
@@ -215,10 +237,10 @@ export default function App() {
               </MenuItem>
             ))}
             <div className="menu-sep" />
-            <div className="menu-label">Currency</div>
+            <div className="menu-label">Currency (loads fresh defaults)</div>
             {CURRENCIES.map((c) => (
-              <MenuItem key={c.sym} onClick={() => setFormat((f) => ({ ...f, currency: c.sym }))}>
-                {format.currency === c.sym ? '✓ ' : '   '}{c.sym}  {c.name}
+              <MenuItem key={c.sym} onClick={() => switchCurrency(c.sym)}>
+                {currency === c.sym ? '✓ ' : '   '}{c.sym}  {c.name}
               </MenuItem>
             ))}
           </Menu>
@@ -324,7 +346,7 @@ export default function App() {
       <Section title="Portfolio & net worth"
         subtitle="List your holdings. Liquid assets set your starting corpus; illiquid ones (real estate) can be sold or refinanced later to top it up.">
         <AssetTable assets={scenario.assets || []} currentAge={scenario.currentAge}
-          planEndAge={scenario.endAge} onChange={(a) => set('assets', a)} />
+          planEndAge={scenario.endAge} currency={currency} onChange={(a) => set('assets', a)} />
       </Section>
 
       {/* ---------------- Solver ---------------- */}
@@ -359,7 +381,7 @@ export default function App() {
       <Section title="Expense line items"
         subtitle="Each line glides in and out by age — the kids' college lines are the early-retirement spike.">
         <ExpenseTable expenses={scenario.expenses} currentAge={scenario.currentAge}
-          planEndAge={scenario.endAge} onChange={(e) => set('expenses', e)} />
+          planEndAge={scenario.endAge} currency={currency} onChange={(e) => set('expenses', e)} />
       </Section>
 
       {/* ---------------- Inflows ---------------- */}
@@ -367,7 +389,7 @@ export default function App() {
         subtitle="Spouse income, rent, coast/part-time, pension — each with its own growth rate.">
         <InflowTable inflows={scenario.inflows} currentAge={scenario.currentAge}
           retirementAge={scenario.retirementAge} planEndAge={scenario.endAge}
-          onChange={(f) => set('inflows', f)} />
+          currency={currency} onChange={(f) => set('inflows', f)} />
       </Section>
 
       {/* ---------------- Saved scenarios ---------------- */}

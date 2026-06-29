@@ -9,12 +9,12 @@ import { Button, NumField, PctField } from './ui.jsx';
  * Illiquid assets grow at their own rate and can be sold/refinanced at a chosen
  * age, dropping a share of their grown value back into the corpus.
  */
-export default function AssetTable({ assets, currentAge, planEndAge, onChange }) {
+export default function AssetTable({ assets, currentAge, planEndAge, currency, onChange }) {
   const update = (id, patch) =>
     onChange(assets.map((a) => (a.id === id ? { ...a, ...patch } : a)));
   const remove = (id) => onChange(assets.filter((a) => a.id !== id));
-  const add = () => onChange([...assets, newAsset()]);
-  const loadSample = () => onChange(samplePortfolio());
+  const add = () => onChange([...assets, newAsset(currency)]);
+  const loadSample = () => onChange(samplePortfolio(currency));
 
   const liquidTotal = assets.filter((a) => a.liquid).reduce((s, a) => s + (Number(a.value) || 0), 0);
   const illiquidTotal = assets.filter((a) => !a.liquid).reduce((s, a) => s + (Number(a.value) || 0), 0);

@@ -9,11 +9,11 @@ function annualToday(e) {
   return e.cadence === 'monthly' ? a * 12 : a;
 }
 
-export default function ExpenseTable({ expenses, currentAge, planEndAge, onChange }) {
+export default function ExpenseTable({ expenses, currentAge, planEndAge, currency, onChange }) {
   const update = (id, patch) =>
     onChange(expenses.map((e) => (e.id === id ? { ...e, ...patch } : e)));
   const remove = (id) => onChange(expenses.filter((e) => e.id !== id));
-  const add = () => onChange([...expenses, newExpense(currentAge)]);
+  const add = () => onChange([...expenses, newExpense(currentAge, currency)]);
 
   // Separate the steady run-rate from one-offs so the total isn't muddied by
   // a future lump sum being treated as a yearly cost.
