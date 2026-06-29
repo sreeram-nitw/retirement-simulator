@@ -1,22 +1,77 @@
-/** Indian-notation currency + number formatting helpers. */
+/**
+ * Configurable currency + number formatting.
+ *
+ * One runtime config (currency symbol + notation system) drives every figure in
+ * the app, since all components format through inr()/inrFull(). Grouping (commas)
+ * comes from Intl.NumberFormat using the system's locale, so large numbers are
+ * always readable.
+ */
 
-/** Compact ₹ in Lakh / Crore (e.g. ₹1.50 Cr, ₹25.00 L). */
+const SYSTEMS = {
+  indian: {
+    locale: 'en-IN', // groups as 8,41,46,161
+    units: [
+      { v: 1e7, s: ' Cr' },
+      { v: 1e5, s: ' L' },
+    ],
+  },
+  international: {
+    locale: 'en-US', // groups as 84,146,161
+    units: [
+      { v: 1e9, s: 'B' },
+      { v: 1e6, s: 'M' },
+      { v: 1e3, s: 'K' },
+    ],
+  },
+};
+
+export const SYSTEM_OPTIONS = [
+  { key: 'indian', label: 'Indian (Lakh / Crore)' },
+  { key: 'international', label: 'International (K / M / B)' },
+];
+
+export const CURRENCIES = [
+  { sym: '₹', name: 'INR' },
+  { sym: '$', name: 'USD' },
+  { sym: '€', name: 'EUR' },
+  { sym: '£', name: 'GBP' },
+];
+
+const DEFAULTS = { system: 'indian', currency: '₹' };
+let CONFIG = { ...DEFAULTS };
+
+export function setFormatConfig(c = {}) {
+  CONFIG = {
+    system: SYSTEMS[c.system] ? c.system : CONFIG.system,
+    currency: c.currency || CONFIG.currency,
+  };
+}
+export function getFormatConfig() {
+  return { ...CONFIG };
+}
+
+const sys = () => SYSTEMS[CONFIG.system] || SYSTEMS.indian;
+
+/** Group a number with the active system's locale and up to `maxFrac` decimals. */
+function group(n, maxFrac = 0) {
+  return new Intl.NumberFormat(sys().locale, { maximumFractionDigits: maxFrac }).format(n);
+}
+
+/** Compact currency (e.g. ₹1.5 Cr, $1.5M) — symbol- and notation-aware, grouped. */
 export function inr(n) {
   if (n == null || isNaN(n)) return '—';
   const neg = n < 0;
   const a = Math.abs(n);
-  let s;
-  if (a >= 1e7) s = `${(a / 1e7).toFixed(2)} Cr`;
-  else if (a >= 1e5) s = `${(a / 1e5).toFixed(2)} L`;
-  else if (a >= 1e3) s = `${Math.round(a).toLocaleString('en-IN')}`;
-  else s = `${Math.round(a)}`;
-  return `${neg ? '-' : ''}₹${s}`;
+  const unit = sys().units.find((u) => a >= u.v);
+  const body = unit ? `${group(a / unit.v, 2)}${unit.s}` : group(a, 0);
+  return `${neg ? '-' : ''}${CONFIG.currency}${body}`;
 }
 
-/** Full ₹ with Indian digit grouping (e.g. ₹8,41,46,161). */
+/** Full currency with digit grouping (e.g. ₹8,41,46,161 or $84,146,161). */
 export function inrFull(n) {
   if (n == null || isNaN(n)) return '—';
-  return `₹${Math.round(n).toLocaleString('en-IN')}`;
+  const neg = n < 0;
+  return `${neg ? '-' : ''}${CONFIG.currency}${group(Math.abs(n), 0)}`;
 }
 
 /** Percent from a fraction (0.08 -> "8%"). */

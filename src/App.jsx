@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { simulate, blend, earliestSafeRetirementAge, maxSafeExpenseFactor, liquidAssetTotal, spendBreakdown } from './lib/engine.js';
 import { defaultScenario, simpleScenario } from './lib/defaults.js';
-import { inr, inrFull, pct } from './lib/format.js';
+import { inr, inrFull, pct, setFormatConfig, SYSTEM_OPTIONS, CURRENCIES } from './lib/format.js';
 import { shareUrl, scenarioFromHash, rowsToCsv, downloadFile, exportData, parseImport, encodeScenario, createShortLink, shortIdFromPath, fetchScenarioById } from './lib/share.js';
 import { Section, Stat, Field, RupeeInput, PercentInput, Slider, Toggle, Button, NumField, PctField } from './components/ui.jsx';
 import ExpenseTable from './components/ExpenseTable.jsx';
@@ -11,6 +11,7 @@ import AssetTable from './components/AssetTable.jsx';
 import { CorpusChart, ExpenseChart } from './components/Charts.jsx';
 
 const SAVE_KEY = 'retsim:saved:v1';
+const FORMAT_KEY = 'retsim:format:v1';
 
 /* ----------------------------- Allocation editor ----------------------------- */
 function AllocationTable({ rows, onChange }) {
@@ -69,7 +70,17 @@ export default function App() {
   const [showTable, setShowTable] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [format, setFormat] = useState(() => {
+    try { return { ...{ system: 'indian', currency: '₹' }, ...JSON.parse(localStorage.getItem(FORMAT_KEY)) }; }
+    catch { return { system: 'indian', currency: '₹' }; }
+  });
   const fileInputRef = useRef(null);
+
+  // Apply the display preference before children render, and persist it.
+  setFormatConfig(format);
+  useEffect(() => {
+    try { localStorage.setItem(FORMAT_KEY, JSON.stringify(format)); } catch {}
+  }, [format]);
 
   const set = (field, value) => setScenario((s) => ({ ...s, [field]: value }));
 
@@ -196,6 +207,21 @@ export default function App() {
         <div className="topbar-actions">
           <Button variant="primary" onClick={doShare}>{copied ? '✓ Link copied' : 'Share link'}</Button>
           <Button variant="default" onClick={saveCurrent}>Save</Button>
+          <Menu label="Format" closeOnSelect={false}>
+            <div className="menu-label">Notation</div>
+            {SYSTEM_OPTIONS.map((o) => (
+              <MenuItem key={o.key} onClick={() => setFormat((f) => ({ ...f, system: o.key }))}>
+                {format.system === o.key ? '✓ ' : '   '}{o.label}
+              </MenuItem>
+            ))}
+            <div className="menu-sep" />
+            <div className="menu-label">Currency</div>
+            {CURRENCIES.map((c) => (
+              <MenuItem key={c.sym} onClick={() => setFormat((f) => ({ ...f, currency: c.sym }))}>
+                {format.currency === c.sym ? '✓ ' : '   '}{c.sym}  {c.name}
+              </MenuItem>
+            ))}
+          </Menu>
           <Menu label="More">
             <div className="menu-label">Examples</div>
             <MenuItem onClick={() => applyPreset(defaultScenario)}>Detailed example</MenuItem>
@@ -416,7 +442,7 @@ export default function App() {
 }
 
 /* dropdown menu for secondary topbar actions */
-function Menu({ label, children }) {
+function Menu({ label, children, closeOnSelect = true }) {
   const [open, setOpen] = useState(false);
   const ref = useRef(null);
   useEffect(() => {
@@ -429,7 +455,7 @@ function Menu({ label, children }) {
     <div className="menu" ref={ref}>
       <Button variant="default" onClick={() => setOpen((o) => !o)}>{label} ▾</Button>
       {open && (
-        <div className="menu-pop" role="menu" onClick={() => setOpen(false)}>
+        <div className="menu-pop" role="menu" onClick={closeOnSelect ? () => setOpen(false) : undefined}>
           {children}
         </div>
       )}
