@@ -25,17 +25,17 @@ const SYSTEMS = {
   },
 };
 
-export const SYSTEM_OPTIONS = [
-  { key: 'indian', label: 'Indian (Lakh / Crore)' },
-  { key: 'international', label: 'International (K / M / B)' },
+// Notation follows the currency: ₹ uses Lakh/Crore, the rest use K/M/B.
+export const CURRENCIES = [
+  { sym: '₹', name: 'INR', system: 'indian' },
+  { sym: '$', name: 'USD', system: 'international' },
+  { sym: '€', name: 'EUR', system: 'international' },
+  { sym: '£', name: 'GBP', system: 'international' },
 ];
 
-export const CURRENCIES = [
-  { sym: '₹', name: 'INR' },
-  { sym: '$', name: 'USD' },
-  { sym: '€', name: 'EUR' },
-  { sym: '£', name: 'GBP' },
-];
+export function systemForCurrency(sym) {
+  return (CURRENCIES.find((c) => c.sym === sym) || {}).system || 'international';
+}
 
 const DEFAULTS = { system: 'indian', currency: '₹' };
 let CONFIG = { ...DEFAULTS };

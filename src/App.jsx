@@ -1,7 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { simulate, blend, earliestSafeRetirementAge, maxSafeExpenseFactor, liquidAssetTotal, spendBreakdown } from './lib/engine.js';
 import { defaultScenario, simpleScenario } from './lib/defaults.js';
-import { inr, inrFull, pct, setFormatConfig, SYSTEM_OPTIONS, CURRENCIES } from './lib/format.js';
+import { inr, inrFull, pct, setFormatConfig, systemForCurrency, CURRENCIES } from './lib/format.js';
 import { shareUrl, scenarioFromHash, rowsToCsv, downloadFile, exportData, parseImport, encodeScenario, createShortLink, shortIdFromPath, fetchScenarioById } from './lib/share.js';
 import { Section, Stat, Field, RupeeInput, PercentInput, Slider, Toggle, Button, NumField, PctField } from './components/ui.jsx';
 import ExpenseTable from './components/ExpenseTable.jsx';
@@ -85,11 +85,12 @@ export default function App() {
   const [isExample, setIsExample] = useState(() => !scenarioFromHash());
   const fileInputRef = useRef(null);
 
-  // Currency is a property of the scenario; notation is a viewer preference.
+  // Currency is a property of the scenario; notation is derived from it.
   const currency = scenario.currency || format.currency || '₹';
 
   // Apply the display config before children render, and persist the preference.
-  setFormatConfig({ system: format.system, currency });
+  // Notation follows the currency, so there's nothing separate to choose.
+  setFormatConfig({ system: systemForCurrency(currency), currency });
   useEffect(() => {
     try { localStorage.setItem(FORMAT_KEY, JSON.stringify(format)); } catch {}
   }, [format]);
@@ -229,14 +230,7 @@ export default function App() {
         <div className="topbar-actions">
           <Button variant="primary" onClick={doShare}>{copied ? '✓ Link copied' : 'Share link'}</Button>
           <Button variant="default" onClick={saveCurrent}>Save</Button>
-          <Menu label="Format" closeOnSelect={false}>
-            <div className="menu-label">Notation</div>
-            {SYSTEM_OPTIONS.map((o) => (
-              <MenuItem key={o.key} onClick={() => setFormat((f) => ({ ...f, system: o.key }))}>
-                {format.system === o.key ? '✓ ' : '   '}{o.label}
-              </MenuItem>
-            ))}
-            <div className="menu-sep" />
+          <Menu label="Currency">
             <div className="menu-label">Currency (loads fresh defaults)</div>
             {CURRENCIES.map((c) => (
               <MenuItem key={c.sym} onClick={() => switchCurrency(c.sym)}>
