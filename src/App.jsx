@@ -114,6 +114,12 @@ export default function App() {
   const liquidSum = liquidAssetTotal(scenario);
   const usingPortfolio = liquidSum != null;
 
+  // Solver display: anchor the % to concrete year-1 rupee figures.
+  const plannedMonthly = firstRet ? firstRet.expense / 12 : 0;
+  const maxSafeMonthly = solver.maxSpend.monthlyAtRetirement;
+  const headroomPct = Math.round((solver.maxSpend.factor - 1) * 100);
+  const overspending = solver.maxSpend.factor < 1;
+
   /* actions */
   const applyPreset = (fn) => { setScenario(fn()); };
   const saveCurrent = () => {
@@ -289,20 +295,24 @@ export default function App() {
       </Section>
 
       {/* ---------------- Solver ---------------- */}
-      <Section title="Solver" subtitle="Your safe limits, updated live as you change anything.">
+      <Section title="Solver"
+        subtitle={`Updated live. "Safe" = your corpus lasts to age ${lastSpendAge}, holding everything else fixed.`}>
         <div className="stats">
-          <Stat label="Earliest safe retirement age"
+          <Stat label="Earliest age you could retire"
             value={solver.earliest != null ? solver.earliest : 'Not within plan'}
             tone={solver.earliest != null && solver.earliest <= scenario.retirementAge ? 'good' : 'warn'}
-            sub={solver.earliest != null ? `vs. your ${scenario.retirementAge}` : 'even working to the end falls short'} />
-          <Stat label="Max safe spending"
-            value={`${Math.round(solver.maxSpend.factor * 100)}% of plan`}
-            tone={solver.maxSpend.factor >= 1 ? 'good' : 'bad'}
-            sub={`≈ ${inr(solver.maxSpend.monthlyAtRetirement)}/mo in year 1`} />
-          <Stat label="Headroom"
-            value={solver.maxSpend.factor >= 1 ? `+${Math.round((solver.maxSpend.factor - 1) * 100)}%` : `−${Math.round((1 - solver.maxSpend.factor) * 100)}%`}
-            tone={solver.maxSpend.factor >= 1 ? 'good' : 'bad'}
-            sub="vs. current spending" />
+            sub={solver.earliest != null ? `you chose ${scenario.retirementAge}` : 'even working to the end falls short'} />
+          <Stat label="You plan to spend"
+            value={firstRet ? `${inr(plannedMonthly)}/mo` : '—'}
+            sub="first retirement year" />
+          <Stat label="Most you could safely spend"
+            value={firstRet ? `${inr(maxSafeMonthly)}/mo` : '—'}
+            tone={overspending ? 'bad' : 'good'}
+            sub={firstRet
+              ? (overspending
+                  ? `${headroomPct}% — trim spending to stay safe`
+                  : `+${headroomPct}% more than you plan to`)
+              : ''} />
         </div>
       </Section>
 
