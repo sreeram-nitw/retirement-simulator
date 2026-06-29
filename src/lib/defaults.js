@@ -48,8 +48,8 @@ function buildExpenses() {
     m('Kids', 'Child 1 — college', 600000, 'yearly', 41, 44),
     m('Kids', 'Child 2 — school', 80000, 'yearly', 30, 43),
     m('Kids', 'Child 2 — college', 600000, 'yearly', 44, 47),
-    m('Kids', 'Tuition & coaching', 3000, 'monthly', 30, 'life'),
-    m('Kids', 'Activities & sports', 2000, 'monthly', 30, 'life'),
+    m('Kids', 'Tuition & coaching', 3000, 'monthly', 30, 47),
+    m('Kids', 'Activities & sports', 2000, 'monthly', 30, 45),
     // ---- Utilities ----
     m('Utilities', 'Electricity', 2500, 'monthly', 30, 'life'),
     m('Utilities', 'Internet & mobile', 1500, 'monthly', 30, 'life'),
