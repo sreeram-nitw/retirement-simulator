@@ -138,13 +138,13 @@ export const EXPENSE_BUCKETS = [
 export const newExpense = (startAge = 30) =>
   m('Other', 'New expense', 10000, 'monthly', startAge, 'life');
 
-export const newInflow = () => ({
+export const newInflow = (startAge = 60) => ({
   id: uid('i'),
   name: 'New inflow',
   amount: 20000,
   cadence: 'monthly',
-  startAge: 60,
-  endAge: 65,
+  startAge,
+  endAge: startAge + 5,
   growthRate: 0.05,
 });
 

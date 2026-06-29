@@ -317,7 +317,8 @@ export default function App() {
       <Section title="Post-retirement income (inflows)"
         subtitle="Spouse income, rent, coast/part-time, pension — each with its own growth rate.">
         <InflowTable inflows={scenario.inflows} currentAge={scenario.currentAge}
-          planEndAge={scenario.endAge} onChange={(f) => set('inflows', f)} />
+          retirementAge={scenario.retirementAge} planEndAge={scenario.endAge}
+          onChange={(f) => set('inflows', f)} />
       </Section>
 
       {/* ---------------- Saved scenarios ---------------- */}

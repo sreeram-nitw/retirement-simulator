@@ -4,11 +4,11 @@ import { newInflow } from '../lib/defaults.js';
 import { Button, NumField, PctField } from './ui.jsx';
 
 /** Editor for user-defined post-retirement inflows (spouse income, rent, coast, pension...). */
-export default function InflowTable({ inflows, currentAge, planEndAge, onChange }) {
+export default function InflowTable({ inflows, currentAge, retirementAge, planEndAge, onChange }) {
   const update = (id, patch) =>
     onChange(inflows.map((f) => (f.id === id ? { ...f, ...patch } : f)));
   const remove = (id) => onChange(inflows.filter((f) => f.id !== id));
-  const add = () => onChange([...inflows, newInflow()]);
+  const add = () => onChange([...inflows, newInflow(retirementAge)]);
 
   return (
     <div>
