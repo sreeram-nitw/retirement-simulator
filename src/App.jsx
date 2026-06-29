@@ -114,9 +114,13 @@ export default function App() {
   const liquidSum = liquidAssetTotal(scenario);
   const usingPortfolio = liquidSum != null;
 
-  // Solver display: anchor the % to concrete year-1 rupee figures.
-  const plannedMonthly = firstRet ? firstRet.expense / 12 : 0;
-  const maxSafeMonthly = solver.maxSpend.monthlyAtRetirement;
+  // Solver display: anchor the % to concrete rupee figures, shown in today's ₹.
+  // The first retirement year inflates every line by the same factor, so we
+  // deflate both figures by it to recover today's-money terms.
+  const yearsToRet = Math.max(0, scenario.retirementAge - scenario.currentAge);
+  const deflator = Math.pow(1 + (Number(scenario.inflation) || 0), yearsToRet);
+  const plannedMonthly = firstRet ? firstRet.expense / 12 / deflator : 0;
+  const maxSafeMonthly = solver.maxSpend.monthlyAtRetirement / deflator;
   const headroomPct = Math.round((solver.maxSpend.factor - 1) * 100);
   const overspending = solver.maxSpend.factor < 1;
 
@@ -296,7 +300,7 @@ export default function App() {
 
       {/* ---------------- Solver ---------------- */}
       <Section title="Solver"
-        subtitle={`Updated live. "Safe" = your corpus lasts to age ${lastSpendAge}, holding everything else fixed.`}>
+        subtitle={`Updated live, in today's ₹. "Safe" = your corpus lasts to age ${lastSpendAge}, holding everything else fixed.`}>
         <div className="stats">
           <Stat label="Earliest age you could retire"
             value={solver.earliest != null ? solver.earliest : 'Not within plan'}
@@ -304,7 +308,7 @@ export default function App() {
             sub={solver.earliest != null ? `you chose ${scenario.retirementAge}` : 'even working to the end falls short'} />
           <Stat label="You plan to spend"
             value={firstRet ? `${inr(plannedMonthly)}/mo` : '—'}
-            sub="first retirement year" />
+            sub="in today's ₹" />
           <Stat label="Most you could safely spend"
             value={firstRet ? `${inr(maxSafeMonthly)}/mo` : '—'}
             tone={overspending ? 'bad' : 'good'}
