@@ -1,5 +1,5 @@
 import React from 'react';
-import { inr } from '../lib/format.js';
+import { inr, currencySymbol } from '../lib/format.js';
 import { newAsset, samplePortfolio } from '../lib/defaults.js';
 import { Button, NumField, PctField } from './ui.jsx';
 
@@ -35,7 +35,7 @@ export default function AssetTable({ assets, currentAge, planEndAge, onChange })
             <thead>
               <tr>
                 <th>Asset</th>
-                <th className="num">Value (₹)</th>
+                <th className="num">Value ({currencySymbol()})</th>
                 <th className="num">Liquid?</th>
                 <th className="num">Growth/yr</th>
                 <th className="num">Sell / refi?</th>

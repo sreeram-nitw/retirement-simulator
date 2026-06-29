@@ -1,5 +1,5 @@
 import React from 'react';
-import { inr } from '../lib/format.js';
+import { inr, currencySymbol } from '../lib/format.js';
 import { EXPENSE_BUCKETS, newExpense } from '../lib/defaults.js';
 import { Button, NumField } from './ui.jsx';
 
@@ -31,7 +31,7 @@ export default function ExpenseTable({ expenses, currentAge, planEndAge, onChang
             <tr>
               <th>Bucket</th>
               <th>Item</th>
-              <th className="num">Amount (₹)</th>
+              <th className="num">Amount ({currencySymbol()})</th>
               <th>Cadence</th>
               <th className="num">Start age</th>
               <th className="num">End age</th>
@@ -133,7 +133,7 @@ export default function ExpenseTable({ expenses, currentAge, planEndAge, onChang
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={6} className="num strong">Recurring / year (today's ₹)</td>
+              <td colSpan={6} className="num strong">Recurring / year (today's money)</td>
               <td className="num strong">{inr(recurringAnnual)}</td>
               <td></td>
             </tr>
@@ -152,7 +152,7 @@ export default function ExpenseTable({ expenses, currentAge, planEndAge, onChang
       <div className="row-actions">
         <Button onClick={add} variant="ghost">+ Add expense</Button>
         <span className="muted small">
-          Totals are in today's ₹. Each line only applies within its start–end age window, and the projection
+          Totals are in today's money. Each line only applies within its start–end age window, and the projection
           inflates it to the year spent. Expenses draw from the corpus only once you're retired.
         </span>
       </div>

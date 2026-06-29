@@ -50,6 +50,11 @@ export function getFormatConfig() {
   return { ...CONFIG };
 }
 
+/** The active currency symbol — for static labels like column headers. */
+export function currencySymbol() {
+  return CONFIG.currency;
+}
+
 const sys = () => SYSTEMS[CONFIG.system] || SYSTEMS.indian;
 
 /** Group a number with the active system's locale and up to `maxFrac` decimals. */

@@ -42,7 +42,7 @@ export default function SpendBreakdown({ breakdown }) {
   return (
     <div className="spend">
       <p className="muted">
-        Year-1 retirement spend is <strong>{inr(total / 12)}/mo</strong> (today's ₹). Your top 3 lines
+        Year-1 retirement spend is <strong>{inr(total / 12)}/mo</strong> (today's money). Your top 3 lines
         ({top3Names}) are <strong>{top3Pct}%</strong> of it — trimming the longest bars moves the needle most.
       </p>
 

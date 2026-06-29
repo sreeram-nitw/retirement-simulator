@@ -1,5 +1,5 @@
 import React from 'react';
-import { inr, pct } from '../lib/format.js';
+import { inr, pct, currencySymbol } from '../lib/format.js';
 import { newInflow } from '../lib/defaults.js';
 import { Button, NumField, PctField } from './ui.jsx';
 
@@ -24,7 +24,7 @@ export default function InflowTable({ inflows, currentAge, retirementAge, planEn
             <thead>
               <tr>
                 <th>Source</th>
-                <th className="num">Amount (₹)</th>
+                <th className="num">Amount ({currencySymbol()})</th>
                 <th>Cadence</th>
                 <th className="num">Start age</th>
                 <th className="num">End age</th>

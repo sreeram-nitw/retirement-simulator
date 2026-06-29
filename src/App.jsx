@@ -254,7 +254,7 @@ export default function App() {
         <div className="stats">
           <Stat
             label={result.survives ? 'Corpus left at end' : 'Corpus at depletion'}
-            value={result.survives ? inr(result.endingCorpus) : `₹0 @ ${result.depletionAge}`}
+            value={result.survives ? inr(result.endingCorpus) : `${inr(0)} @ ${result.depletionAge}`}
             tone={result.survives ? 'good' : 'bad'}
           />
           <Stat label="First-year spend (retd.)" value={firstRet ? `${inr(firstRet.expense / 12)}/mo` : '—'}
@@ -329,7 +329,7 @@ export default function App() {
 
       {/* ---------------- Solver ---------------- */}
       <Section title="Solver"
-        subtitle={`Updated live, in today's ₹. "Safe" = your corpus lasts to age ${lastSpendAge}, holding everything else fixed.`}>
+        subtitle={`Updated live, in today's money. "Safe" = your corpus lasts to age ${lastSpendAge}, holding everything else fixed.`}>
         <div className="stats">
           <Stat label="Earliest age you could retire"
             value={solver.earliest != null ? solver.earliest : 'Not within plan'}
@@ -337,7 +337,7 @@ export default function App() {
             sub={solver.earliest != null ? `you chose ${scenario.retirementAge}` : 'even working to the end falls short'} />
           <Stat label="You plan to spend"
             value={firstRet ? `${inr(plannedMonthly)}/mo` : '—'}
-            sub="in today's ₹" />
+            sub="in today's money" />
           <Stat label="Most you could safely spend"
             value={firstRet ? `${inr(maxSafeMonthly)}/mo` : '—'}
             tone={overspending ? 'bad' : 'good'}
@@ -351,7 +351,7 @@ export default function App() {
 
       {/* ---------------- Where your money goes ---------------- */}
       <Section title="Where your money goes"
-        subtitle="Year-1 retirement spend ranked by size, in today's ₹. The biggest bars are where cutting has the most impact.">
+        subtitle="Year-1 retirement spend ranked by size, in today's money. The biggest bars are where cutting has the most impact.">
         <SpendBreakdown breakdown={breakdown} />
       </Section>
 
