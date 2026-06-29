@@ -1,9 +1,9 @@
 import React from 'react';
 import { inr } from '../lib/format.js';
 import { EXPENSE_BUCKETS, newExpense } from '../lib/defaults.js';
-import { Button } from './ui.jsx';
+import { Button, NumField } from './ui.jsx';
 
-/** Annual amount in today's rupees for display. */
+/** Annual amount in today's rupees for display (one-offs are not annual). */
 function annualToday(e) {
   const a = Number(e.amount) || 0;
   return e.cadence === 'monthly' ? a * 12 : a;
@@ -15,7 +15,13 @@ export default function ExpenseTable({ expenses, currentAge, planEndAge, onChang
   const remove = (id) => onChange(expenses.filter((e) => e.id !== id));
   const add = () => onChange([...expenses, newExpense()]);
 
-  const totalAnnual = expenses.reduce((s, e) => s + annualToday(e), 0);
+  // Separate the steady run-rate from one-offs so the total isn't muddied by
+  // a future lump sum being treated as a yearly cost.
+  const oneOffs = expenses.filter((e) => e.cadence === 'oneoff');
+  const recurringAnnual = expenses
+    .filter((e) => e.cadence !== 'oneoff')
+    .reduce((s, e) => s + annualToday(e), 0);
+  const oneOffTotal = oneOffs.reduce((s, e) => s + (Number(e.amount) || 0), 0);
 
   return (
     <div>
@@ -57,12 +63,11 @@ export default function ExpenseTable({ expenses, currentAge, planEndAge, onChang
                     />
                   </td>
                   <td className="num">
-                    <input
+                    <NumField
                       className="input sm num"
-                      type="number"
                       value={e.amount}
                       step={1000}
-                      onChange={(ev) => update(e.id, { amount: Number(ev.target.value) })}
+                      onChange={(v) => update(e.id, { amount: v })}
                     />
                   </td>
                   <td>
@@ -77,13 +82,12 @@ export default function ExpenseTable({ expenses, currentAge, planEndAge, onChang
                     </select>
                   </td>
                   <td className="num">
-                    <input
+                    <NumField
                       className="input sm num xs"
-                      type="number"
                       value={e.startAge}
                       min={currentAge}
                       max={planEndAge}
-                      onChange={(ev) => update(e.id, { startAge: Number(ev.target.value) })}
+                      onChange={(v) => update(e.id, { startAge: v })}
                     />
                   </td>
                   <td className="num">
@@ -91,15 +95,14 @@ export default function ExpenseTable({ expenses, currentAge, planEndAge, onChang
                       <span className="muted">—</span>
                     ) : (
                       <span className="endage">
-                        <input
+                        <NumField
                           className="input sm num xs"
-                          type="number"
                           value={isLife ? '' : e.endAge}
                           placeholder="Life"
                           disabled={isLife}
                           min={currentAge}
                           max={planEndAge}
-                          onChange={(ev) => update(e.id, { endAge: Number(ev.target.value) })}
+                          onChange={(v) => update(e.id, { endAge: v })}
                         />
                         <label className="life-toggle" title="Lasts for life">
                           <input
@@ -114,7 +117,11 @@ export default function ExpenseTable({ expenses, currentAge, planEndAge, onChang
                       </span>
                     )}
                   </td>
-                  <td className="num muted">{inr(annualToday(e))}</td>
+                  <td className="num muted">
+                    {e.cadence === 'oneoff'
+                      ? `${inr(Number(e.amount) || 0)} once`
+                      : inr(annualToday(e))}
+                  </td>
                   <td>
                     <button className="icon-btn" title="Remove" onClick={() => remove(e.id)}>
                       ✕
@@ -126,17 +133,27 @@ export default function ExpenseTable({ expenses, currentAge, planEndAge, onChang
           </tbody>
           <tfoot>
             <tr>
-              <td colSpan={6} className="num strong">Total recurring (today's rupees)</td>
-              <td className="num strong">{inr(totalAnnual)}</td>
+              <td colSpan={6} className="num strong">Recurring / year (today's ₹)</td>
+              <td className="num strong">{inr(recurringAnnual)}</td>
               <td></td>
             </tr>
+            {oneOffs.length > 0 && (
+              <tr>
+                <td colSpan={6} className="num muted">
+                  + {oneOffs.length} one-off {oneOffs.length > 1 ? 'items' : 'item'} (counted in their start year)
+                </td>
+                <td className="num muted">{inr(oneOffTotal)}</td>
+                <td></td>
+              </tr>
+            )}
           </tfoot>
         </table>
       </div>
       <div className="row-actions">
         <Button onClick={add} variant="ghost">+ Add expense</Button>
         <span className="muted small">
-          Expenses only draw from the corpus once you're retired. One-off lines hit only in their start year.
+          Totals are in today's ₹. Each line only applies within its start–end age window, and the projection
+          inflates it to the year spent. Expenses draw from the corpus only once you're retired.
         </span>
       </div>
     </div>

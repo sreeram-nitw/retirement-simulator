@@ -3,7 +3,7 @@ import { simulate, blend, earliestSafeRetirementAge, maxSafeExpenseFactor, liqui
 import { defaultScenario, simpleScenario } from './lib/defaults.js';
 import { inr, inrFull, pct } from './lib/format.js';
 import { shareUrl, scenarioFromHash, rowsToCsv, downloadFile, exportData, parseImport, encodeScenario, createShortLink, shortIdFromPath, fetchScenarioById } from './lib/share.js';
-import { Section, Stat, Field, RupeeInput, PercentInput, Slider, Toggle, Button } from './components/ui.jsx';
+import { Section, Stat, Field, RupeeInput, PercentInput, Slider, Toggle, Button, NumField, PctField } from './components/ui.jsx';
 import ExpenseTable from './components/ExpenseTable.jsx';
 import InflowTable from './components/InflowTable.jsx';
 import AssetTable from './components/AssetTable.jsx';
@@ -53,13 +53,7 @@ function AllocationTable({ rows, onChange }) {
 function PctCell({ value, onChange }) {
   return (
     <span className="pctcell">
-      <input
-        className="input sm num xs"
-        type="number"
-        step={0.5}
-        value={+(((value) || 0) * 100).toFixed(2)}
-        onChange={(e) => onChange(Number(e.target.value) / 100)}
-      />%
+      <PctField className="input sm num xs" step={0.5} value={value} onChange={onChange} />%
     </span>
   );
 }
@@ -71,7 +65,6 @@ export default function App() {
     try { return JSON.parse(localStorage.getItem(SAVE_KEY)) || []; } catch { return []; }
   });
   const [compareOn, setCompareOn] = useState([]);
-  const [solver, setSolver] = useState(null);
   const [showTable, setShowTable] = useState(false);
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -89,6 +82,15 @@ export default function App() {
     [saved, compareOn]
   );
 
+  // Solver recomputes automatically on every change, like the charts.
+  const solver = useMemo(
+    () => ({
+      earliest: earliestSafeRetirementAge(scenario),
+      maxSpend: maxSafeExpenseFactor(scenario),
+    }),
+    [scenario]
+  );
+
   useEffect(() => {
     try { localStorage.setItem(SAVE_KEY, JSON.stringify(saved)); } catch {}
   }, [saved]);
@@ -99,7 +101,7 @@ export default function App() {
     if (!id) return;
     let cancelled = false;
     fetchScenarioById(id).then((sc) => {
-      if (!cancelled && sc) { setScenario(sc); setSolver(null); }
+      if (!cancelled && sc) { setScenario(sc); }
     });
     return () => { cancelled = true; };
   }, []);
@@ -113,7 +115,7 @@ export default function App() {
   const usingPortfolio = liquidSum != null;
 
   /* actions */
-  const applyPreset = (fn) => { setScenario(fn()); setSolver(null); };
+  const applyPreset = (fn) => { setScenario(fn()); };
   const saveCurrent = () => {
     const name = prompt('Name this scenario:', scenario.name || 'My scenario');
     if (!name) return;
@@ -124,7 +126,7 @@ export default function App() {
     setSaved((prev) => prev.filter((p) => p.name !== name));
     setCompareOn((prev) => prev.filter((n) => n !== name));
   };
-  const loadSaved = (s) => { setScenario(s.scenario); setSolver(null); };
+  const loadSaved = (s) => { setScenario(s.scenario); };
   const toggleCompare = (name) =>
     setCompareOn((prev) => (prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name]));
   const doShare = async () => {
@@ -154,7 +156,7 @@ export default function App() {
             return [...prev.filter((p) => !names.has(p.name)), ...incoming];
           });
         }
-        if (current) { setScenario(current); setSolver(null); }
+        if (current) { setScenario(current); }
         const parts = [];
         if (current) parts.push('current scenario');
         if (incoming.length) parts.push(`${incoming.length} saved scenario${incoming.length > 1 ? 's' : ''}`);
@@ -166,11 +168,6 @@ export default function App() {
     reader.onerror = () => alert('Could not read that file.');
     reader.readAsText(file);
   };
-  const runSolver = () =>
-    setSolver({
-      earliest: earliestSafeRetirementAge(scenario),
-      maxSpend: maxSafeExpenseFactor(scenario),
-    });
 
   return (
     <div className="app">
@@ -292,26 +289,21 @@ export default function App() {
       </Section>
 
       {/* ---------------- Solver ---------------- */}
-      <Section title="Solver" subtitle="Let the simulator find your safe limits."
-        right={<Button variant="primary" onClick={runSolver}>Run solver</Button>}>
-        {solver ? (
-          <div className="stats">
-            <Stat label="Earliest safe retirement age"
-              value={solver.earliest != null ? solver.earliest : 'Not within plan'}
-              tone={solver.earliest != null && solver.earliest <= scenario.retirementAge ? 'good' : 'warn'}
-              sub={solver.earliest != null ? `vs. your ${scenario.retirementAge}` : 'even working to the end falls short'} />
-            <Stat label="Max safe spending"
-              value={`${Math.round(solver.maxSpend.factor * 100)}% of plan`}
-              tone={solver.maxSpend.factor >= 1 ? 'good' : 'bad'}
-              sub={`≈ ${inr(solver.maxSpend.monthlyAtRetirement)}/mo in year 1`} />
-            <Stat label="Headroom"
-              value={solver.maxSpend.factor >= 1 ? `+${Math.round((solver.maxSpend.factor - 1) * 100)}%` : `−${Math.round((1 - solver.maxSpend.factor) * 100)}%`}
-              tone={solver.maxSpend.factor >= 1 ? 'good' : 'bad'}
-              sub="vs. current spending" />
-          </div>
-        ) : (
-          <p className="muted">Find the earliest age you can safely retire, and how much you can safely spend, holding everything else fixed.</p>
-        )}
+      <Section title="Solver" subtitle="Your safe limits, updated live as you change anything.">
+        <div className="stats">
+          <Stat label="Earliest safe retirement age"
+            value={solver.earliest != null ? solver.earliest : 'Not within plan'}
+            tone={solver.earliest != null && solver.earliest <= scenario.retirementAge ? 'good' : 'warn'}
+            sub={solver.earliest != null ? `vs. your ${scenario.retirementAge}` : 'even working to the end falls short'} />
+          <Stat label="Max safe spending"
+            value={`${Math.round(solver.maxSpend.factor * 100)}% of plan`}
+            tone={solver.maxSpend.factor >= 1 ? 'good' : 'bad'}
+            sub={`≈ ${inr(solver.maxSpend.monthlyAtRetirement)}/mo in year 1`} />
+          <Stat label="Headroom"
+            value={solver.maxSpend.factor >= 1 ? `+${Math.round((solver.maxSpend.factor - 1) * 100)}%` : `−${Math.round((1 - solver.maxSpend.factor) * 100)}%`}
+            tone={solver.maxSpend.factor >= 1 ? 'good' : 'bad'}
+            sub="vs. current spending" />
+        </div>
       </Section>
 
       {/* ---------------- Expense engine ---------------- */}
@@ -426,8 +418,5 @@ function MenuItem({ onClick, children }) {
 
 /* small inline numeric box */
 function NumberBox({ value, onChange }) {
-  return (
-    <input className="input" type="number" value={value}
-      onChange={(e) => onChange(e.target.value === '' ? 0 : Number(e.target.value))} />
-  );
+  return <NumField value={value} onChange={onChange} />;
 }

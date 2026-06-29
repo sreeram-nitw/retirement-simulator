@@ -1,7 +1,7 @@
 import React from 'react';
 import { inr, pct } from '../lib/format.js';
 import { newInflow } from '../lib/defaults.js';
-import { Button } from './ui.jsx';
+import { Button, NumField, PctField } from './ui.jsx';
 
 /** Editor for user-defined post-retirement inflows (spouse income, rent, coast, pension...). */
 export default function InflowTable({ inflows, currentAge, planEndAge, onChange }) {
@@ -45,12 +45,11 @@ export default function InflowTable({ inflows, currentAge, planEndAge, onChange 
                       />
                     </td>
                     <td className="num">
-                      <input
+                      <NumField
                         className="input sm num"
-                        type="number"
                         value={f.amount}
                         step={1000}
-                        onChange={(ev) => update(f.id, { amount: Number(ev.target.value) })}
+                        onChange={(v) => update(f.id, { amount: v })}
                       />
                     </td>
                     <td>
@@ -64,24 +63,22 @@ export default function InflowTable({ inflows, currentAge, planEndAge, onChange 
                       </select>
                     </td>
                     <td className="num">
-                      <input
+                      <NumField
                         className="input sm num xs"
-                        type="number"
                         value={f.startAge}
                         min={currentAge}
                         max={planEndAge}
-                        onChange={(ev) => update(f.id, { startAge: Number(ev.target.value) })}
+                        onChange={(v) => update(f.id, { startAge: v })}
                       />
                     </td>
                     <td className="num">
                       <span className="endage">
-                        <input
+                        <NumField
                           className="input sm num xs"
-                          type="number"
                           value={isLife ? '' : f.endAge}
                           placeholder="Life"
                           disabled={isLife}
-                          onChange={(ev) => update(f.id, { endAge: Number(ev.target.value) })}
+                          onChange={(v) => update(f.id, { endAge: v })}
                         />
                         <label className="life-toggle">
                           <input
@@ -97,14 +94,11 @@ export default function InflowTable({ inflows, currentAge, planEndAge, onChange 
                     </td>
                     <td className="num">
                       <span className="pctcell">
-                        <input
+                        <PctField
                           className="input sm num xs"
-                          type="number"
+                          value={f.growthRate}
                           step={0.5}
-                          value={+(((f.growthRate) || 0) * 100).toFixed(2)}
-                          onChange={(ev) =>
-                            update(f.id, { growthRate: Number(ev.target.value) / 100 })
-                          }
+                          onChange={(v) => update(f.id, { growthRate: v })}
                         />
                         %
                       </span>

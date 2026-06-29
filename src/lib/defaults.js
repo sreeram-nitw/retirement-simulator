@@ -8,8 +8,13 @@
  * show up in the projection. All amounts, ages and rates are editable.
  */
 
-let _id = 0;
-const uid = (p) => `${p}-${_id++}`;
+// Globally-unique id. A plain counter would reset to 0 on each page load and
+// collide with ids inside an already-saved/shared scenario (causing React key
+// clashes when adding rows), so use a random uuid.
+const uid = (p) =>
+  `${p}-${typeof crypto !== 'undefined' && crypto.randomUUID
+    ? crypto.randomUUID()
+    : Math.random().toString(36).slice(2) + Date.now().toString(36)}`;
 
 const PRE_RET_ALLOCATION = [
   { name: 'Fixed Returns', ret: 0.07, tax: 0.3, share: 0.1 },

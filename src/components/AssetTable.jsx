@@ -1,7 +1,7 @@
 import React from 'react';
 import { inr } from '../lib/format.js';
 import { newAsset, samplePortfolio } from '../lib/defaults.js';
-import { Button } from './ui.jsx';
+import { Button, NumField, PctField } from './ui.jsx';
 
 /**
  * Portfolio / net-worth editor.
@@ -58,12 +58,11 @@ export default function AssetTable({ assets, currentAge, planEndAge, onChange })
                       />
                     </td>
                     <td className="num">
-                      <input
+                      <NumField
                         className="input sm num"
-                        type="number"
                         value={a.value}
                         step={100000}
-                        onChange={(e) => update(a.id, { value: Number(e.target.value) })}
+                        onChange={(v) => update(a.id, { value: v })}
                       />
                     </td>
                     <td className="num">
@@ -77,12 +76,11 @@ export default function AssetTable({ assets, currentAge, planEndAge, onChange })
                     <td className="num">
                       {illiquid ? (
                         <span className="pctcell">
-                          <input
+                          <PctField
                             className="input sm num xs"
-                            type="number"
                             step={0.5}
-                            value={+(((a.growth) || 0) * 100).toFixed(2)}
-                            onChange={(e) => update(a.id, { growth: Number(e.target.value) / 100 })}
+                            value={a.growth}
+                            onChange={(v) => update(a.id, { growth: v })}
                           />
                           %
                         </span>
@@ -104,13 +102,12 @@ export default function AssetTable({ assets, currentAge, planEndAge, onChange })
                     </td>
                     <td className="num">
                       {willSell ? (
-                        <input
+                        <NumField
                           className="input sm num xs"
-                          type="number"
                           value={a.liquidationAge}
                           min={currentAge}
                           max={planEndAge - 1}
-                          onChange={(e) => update(a.id, { liquidationAge: Number(e.target.value) })}
+                          onChange={(v) => update(a.id, { liquidationAge: v })}
                         />
                       ) : (
                         <span className="muted">—</span>
@@ -119,14 +116,12 @@ export default function AssetTable({ assets, currentAge, planEndAge, onChange })
                     <td className="num">
                       {willSell ? (
                         <span className="pctcell">
-                          <input
+                          <PctField
                             className="input sm num xs"
-                            type="number"
                             step={5}
-                            value={+(((a.releasePct == null ? 1 : a.releasePct)) * 100).toFixed(0)}
-                            onChange={(e) =>
-                              update(a.id, { releasePct: Math.max(0, Number(e.target.value)) / 100 })
-                            }
+                            min={0}
+                            value={a.releasePct == null ? 1 : a.releasePct}
+                            onChange={(v) => update(a.id, { releasePct: v })}
                           />
                           %
                         </span>
