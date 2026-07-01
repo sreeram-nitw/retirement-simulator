@@ -1,9 +1,9 @@
 {
-  "name": "early-retirement-simulator",
+  "name": "retirement-calculator",
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "description": "Interactive early-retirement (FIRE) simulator with time-varying expenses, college spikes, user-defined inflows, portfolio/net-worth modelling and tax-aware drawdown.",
+  "description": "Interactive retirement calculator with time-varying line-item expenses, user-defined post-retirement income, portfolio/net-worth modelling and tax-aware drawdown.",
   "license": "MIT",
   "scripts": {
     "dev": "vite",

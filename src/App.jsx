@@ -223,7 +223,7 @@ export default function App() {
         <div className="brand">
           <span className="logo">▦</span>
           <div>
-            <h1>Early-Retirement Simulator</h1>
+            <h1>Retirement Calculator</h1>
             <p className="muted small">{scenario.name}</p>
           </div>
         </div>
@@ -373,7 +373,7 @@ export default function App() {
 
       {/* ---------------- Expense engine ---------------- */}
       <Section title="Expense line items"
-        subtitle="Each line glides in and out by age — the kids' college lines are the early-retirement spike.">
+        subtitle="Each line glides in and out by age — the kids' college lines are the classic spending spike.">
         <ExpenseTable expenses={scenario.expenses} currentAge={scenario.currentAge}
           planEndAge={scenario.endAge} currency={currency} onChange={(e) => set('expenses', e)} />
       </Section>

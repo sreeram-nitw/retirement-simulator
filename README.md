@@ -1,9 +1,10 @@
-# Early-Retirement (FIRE) Simulator
+# Retirement Calculator
 
-An interactive, client-side retirement simulator built for the early-retirement
+An interactive, client-side retirement calculator that handles the realistic
 case where post-retirement expenses stay high for a few years (kids in
 school/college, EMIs) and then glide down. It models a year-by-year corpus
-ledger with time-varying, line-item expenses instead of one flat number.
+ledger with time-varying, line-item expenses instead of one flat number — and
+works for any retirement age, early or conventional.
 
 Everything runs **in the browser**. Your numbers never leave your machine — there
 is no backend, no account, and no tracking.
