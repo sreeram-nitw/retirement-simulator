@@ -85,7 +85,7 @@ export function isScenario(obj) {
 /** Serialize the full app state (current scenario + saved scenarios) to a JSON string. */
 export function exportData(scenario, saved) {
   const payload = {
-    app: 'retirement-simulator',
+    app: 'retirement-calculator',
     version: BACKUP_VERSION,
     exportedAt: new Date().toISOString(),
     current: scenario,
